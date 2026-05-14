@@ -30,8 +30,7 @@ type
     FNodeMap: TDictionary<string, TDialogueNode>;
     FCurrentNode: TDialogueNode;
     FTempSkillChecks: TList<TPair<string, TSkillCheck>>;
-    FSafetyCount: Integer;
-    FSafetyLimit: Integer;
+    FMaxIterations: Integer;
 
     function LineText: string;
     function LineTextL: string;
@@ -503,7 +502,7 @@ begin
     'r': if Pos('remove_', L) = 1 then Exit(True);
     'p': if Pos('party_', L) = 1 then Exit(True);
     'c': if Pos('critter_', L) = 1 then Exit(True);
-    'f': if Pos('float_msg', L) = 1 then Exit(True); // only float_msg, not display_msg
+    'f': if Pos('float_msg', L) = 1 then Exit(True); // only float_msg
   end;
 end;
 
@@ -511,10 +510,9 @@ procedure TSSLImporter.ParseBody(Depth: Integer);
 begin
   while FPos < FLines.Count do
   begin
-    Inc(FSafetyCount);
-    if FSafetyCount > FSafetyLimit then
+    if FPos > FMaxIterations then
     begin
-      Err('Parser safety limit exceeded - possible infinite loop in ParseBody');
+      Err('Parser exceeded maximum iterations - possible infinite loop in ParseBody');
       Exit;
     end;
 
@@ -563,10 +561,9 @@ begin
 
   while FPos < FLines.Count do
   begin
-    Inc(FSafetyCount);
-    if FSafetyCount > FSafetyLimit then
+    if FPos > FMaxIterations then
     begin
-      Err('Parser safety limit exceeded - possible infinite loop in ParseFile');
+      Err('Parser exceeded maximum iterations - possible infinite loop in ParseFile');
       Exit;
     end;
 
@@ -677,9 +674,7 @@ begin
     FNodeMap.Clear;
     FTempSkillChecks.Clear;
     FCurrentNode := nil;
-    FSafetyCount := 0;
-    FSafetyLimit := FLines.Count * 10;
-    if FSafetyLimit < 1000 then FSafetyLimit := 1000;
+    FMaxIterations := FLines.Count * 1000; // generous safety margin
 
     FProject := TDialogueProject.Create;
     ParseFile;
