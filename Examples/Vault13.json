@@ -1,0 +1,37 @@
+{
+  "project": {
+    "name": "Vault13",
+    "version": "1.0",
+    "nodes": [
+      {
+        "id": "npc_001",
+        "type": "dntNPC",
+        "speaker": "Overseer",
+        "text": "Welcome to Vault 13.",
+        "x": 100,
+        "y": 100,
+        "links": ["player_001"]
+      },
+      {
+        "id": "player_001",
+        "type": "dntPlayer",
+        "speaker": "Player",
+        "text": "Who are you?",
+        "x": 300,
+        "y": 100,
+        "links": ["npc_002"]
+      },
+      {
+        "id": "npc_002",
+        "type": "dntNPC",
+        "speaker": "Overseer",
+        "text": "I am the Overseer of this vault.",
+        "x": 500,
+        "y": 100,
+        "links": []
+      }
+    ],
+    "variables": [],
+    "skillChecks": []
+  }
+}

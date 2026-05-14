@@ -1,0 +1,23 @@
+# Compiled output
+Win32/
+bin/
+*.exe
+*.map
+*.tds
+*.dcu
+*.obj
+*.res
+*.rsm
+
+# IDE files
+*.dproj.local
+*.identcache
+__history/
+*.dsk
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Recovery
+__recovery/

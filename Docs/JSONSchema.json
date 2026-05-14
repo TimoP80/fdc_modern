@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Fallout Dialogue Project",
+  "type": "object",
+  "properties": {
+    "project": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "type": { "type": "string", "enum": ["dntNPC", "dntPlayer", "dntSkillCheck", "dntConditionalBranch", "dntReputationCheck", "dntQuestCheck", "dntItemCheck", "dntScriptAction", "dntFloatMessage", "dntEnd"] },
+              "speaker": { "type": "string" },
+              "text": { "type": "string" },
+              "x": { "type": "integer" },
+              "y": { "type": "integer" },
+              "links": { "type": "array", "items": { "type": "string" } }
+            },
+            "required": ["id", "type", "text"]
+          }
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "string", "enum": ["vtGlobal", "vtLocal", "vtQuestFlag", "vtKarma", "vtReputation", "vtInventory", "vtPartyMember"] },
+              "value": { "type": "integer" }
+            }
+          }
+        },
+        "skillChecks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "skill": { "type": "string", "enum": ["stSpeech", "stScience", "stRepair", "stLockpick", "stBarter", "stGambling", "stSneak", "stOutdoorsman", "stDoctor", "stFirstAid"] },
+              "difficulty": { "type": "integer" },
+              "successNode": { "type": "string" },
+              "failureNode": { "type": "string" }
+            }
+          }
+        }
+      },
+      "required": ["name", "version", "nodes"]
+    }
+  },
+  "required": ["project"]
+}
