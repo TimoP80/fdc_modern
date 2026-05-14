@@ -30,7 +30,6 @@ type
     FNodeMap: TDictionary<string, TDialogueNode>;
     FCurrentNode: TDialogueNode;
     FTempSkillChecks: TList<TPair<string, TSkillCheck>>;
-    FMaxIterations: Integer;
 
     function LineText: string;
     function LineTextL: string;
@@ -510,12 +509,6 @@ procedure TSSLImporter.ParseBody(Depth: Integer);
 begin
   while FPos < FLines.Count do
   begin
-    if FPos > FMaxIterations then
-    begin
-      Err('Parser exceeded maximum iterations - possible infinite loop in ParseBody');
-      Exit;
-    end;
-
     if LineText = '' then begin Inc(FPos); Continue; end;
 
     var L := LineTextL;
@@ -561,12 +554,6 @@ begin
 
   while FPos < FLines.Count do
   begin
-    if FPos > FMaxIterations then
-    begin
-      Err('Parser exceeded maximum iterations - possible infinite loop in ParseFile');
-      Exit;
-    end;
-
     if Trim(LineText) = '' then begin Inc(FPos); Continue; end;
 
     var L := LineTextL;
@@ -674,7 +661,6 @@ begin
     FNodeMap.Clear;
     FTempSkillChecks.Clear;
     FCurrentNode := nil;
-    FMaxIterations := FLines.Count * 1000; // generous safety margin
 
     FProject := TDialogueProject.Create;
     ParseFile;
