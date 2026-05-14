@@ -119,5 +119,11 @@ Also improved Red `TextPrimary` from $004060FF (4.27:1) → $005070FF.
 - Added FMFImporter to DPR uses clause
 - **Compiler output: 0 errors**, 11 hints only
 
+### Done — SSL Importer Infinite Loop Fix (2026-05-14)
+- **Root cause**: `TrySetStmt` is a predicate returning `True` but does not advance `FPos`. `ParseBody` used `Continue` after it, which skipped the final `Inc(FPos)`, causing infinite loop on any `set_*`, `give_*`, `float_msg` line.
+- **Fix**: Added `Inc(FPos)` immediately after `if TrySetStmt then` in `ParseBody` (line 515)
+- **Cleanup**: Removed intrusive `FSafetyCount` iteration counter (was falsely triggering on nested loops). Replaced with `FPos`-based guard at 1000× file size as defensive measure.
+- **Bonus**: Improved `if/else` depth tracking in `TryIf` — `end` before `else` no longer prematurely decrements `depth`
+
 ### Blocking
 - None
