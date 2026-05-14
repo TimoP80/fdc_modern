@@ -2,6 +2,11 @@
 
 All notable changes to the Fallout Dialogue Creator project are documented in this file.
 
+## [1.0.4] — 2026-05-14
+
+### Fixed
+- **SSL importer hang on regular if-statements** — `TryIf` was designed only for `skill_check` blocks. For plain `if (condition) then ...` lines (e.g., `if (dude_is_male)`), `TryIf` returned `False` but `ParseBody` still called `Continue` without advancing `FPos`, causing infinite loop. Fixed by making `TryIf` handle both `skill_check` and regular conditionals, always advancing `FPos` on entry and correctly skipping the entire block (including `else` branches). Now aborts with error on parse failure instead of hanging.
+
 ## [1.0.3] — 2026-05-14
 
 ### Fixed

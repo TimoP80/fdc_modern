@@ -400,54 +400,65 @@ var
   inner: string;
   parts: TArray<string>;
   numStr: string;
+  isSkillCheck: Boolean;
 begin
   Result := False;
-  if Pos('skill_check(', LineTextL) = 0 then Exit;
-
-  FillChar(sk, SizeOf(sk), 0);
-  sk.Difficulty := 50;
-
-  // Find skill_check() and extract inner args
-  var dp := Pos('skill_check(', LineText);
-  if dp > 0 then
+  
+  // Determine if this is a skill_check if-block or a regular if-block
+  isSkillCheck := Pos('skill_check(', LineTextL) = 1;
+  
+  // For skill_check, parse the skill/difficulty from the arguments
+  if isSkillCheck then
   begin
-    var match := 0;
-    for var i := dp to Length(LineText) do
+    FillChar(sk, SizeOf(sk), 0);
+    sk.Difficulty := 50;
+
+    var dp := Pos('skill_check(', LineText);
+    if dp > 0 then
     begin
-      if LineText[i] = '(' then Inc(match);
-      if LineText[i] = ')' then begin Dec(match); if match = 0 then
-        begin inner := Copy(LineText, dp + 12, i - dp - 12); Break; end;
+      var match := 0;
+      for var i := dp to Length(LineText) do
+      begin
+        if LineText[i] = '(' then Inc(match);
+        if LineText[i] = ')' then begin Dec(match); if match = 0 then
+          begin inner := Copy(LineText, dp + 12, i - dp - 12); Break; end;
+        end;
+      end;
+
+      if inner <> '' then
+      begin
+        parts := inner.Split([',']);
+        if Length(parts) >= 3 then
+        begin
+          sk.Skill := SkillEnum(Trim(parts[1]));
+          numStr := '';
+          for var ch in Trim(parts[2]) do
+            if CharInSet(ch, ['0'..'9', '-']) then numStr := numStr + ch;
+          TryStrToInt(numStr, sk.Difficulty);
+        end;
       end;
     end;
 
-    if inner <> '' then
-    begin
-      parts := inner.Split([',']);
-      if Length(parts) >= 3 then
-      begin
-        sk.Skill := SkillEnum(Trim(parts[1]));
-        numStr := '';
-        for var ch in Trim(parts[2]) do
-          if CharInSet(ch, ['0'..'9', '-']) then numStr := numStr + ch;
-        TryStrToInt(numStr, sk.Difficulty);
-      end;
-    end;
+    if Assigned(FCurrentNode) then
+      FTempSkillChecks.Add(TPair<string, TSkillCheck>.Create(FCurrentNode.ID, sk));
   end;
 
-  if Assigned(FCurrentNode) then
-    FTempSkillChecks.Add(TPair<string, TSkillCheck>.Create(FCurrentNode.ID, sk));
-
+  // We've handled the if line itself; skip to body
   Inc(FPos);
 
-  // Skip entire if/else block tracking depth (if/elseif nesting, begin/end blocks)
+  // Skip entire if/else block tracking depth
   depth := 1;
   while FPos < FLines.Count do
   begin
     var L := LineTextL;
     if (Pos('if(', L) = 1) or (Pos('if ', L) = 1) then
     begin
-      Inc(depth);
-      Inc(FPos);
+      // Nested if-block — recurse to skip it
+      if not TryIf then
+      begin
+        Err('Nested if-block parse error');
+        Exit(False);
+      end;
       Continue;
     end;
     if SameText(LineText, 'begin') then
@@ -457,8 +468,7 @@ begin
     end;
     if Copy(LineTextL, 1, 3) = 'end' then
     begin
-      // If depth=1 and an 'else' follows, this 'end' closes the 'then' block but the if-else continues.
-      // Do not decrement depth yet; consume this 'end' and continue to process 'else'.
+      // If an 'else' follows, this 'end' closes the 'then' block; continue to process 'else'
       if (depth = 1) and (FPos + 1 < FLines.Count) and SameText(Trim(FLines[FPos + 1]), 'else') then
       begin
         Inc(FPos);
@@ -473,18 +483,16 @@ begin
     if SameText(LineText, 'else') then
     begin
       Inc(FPos);
-      // If else is followed by 'begin' on same line? Unlikely, but check next line
+      // If else is followed by 'begin' on the next line, skip the begin
       if (FPos < FLines.Count) and SameText(LineText, 'begin') then
-      begin
-        Inc(FPos); // skip 'begin'
-      end;
+        Inc(FPos);
       Continue;
     end;
     Inc(FPos);
   end;
 
-   Result := True;
- end;
+  Result := True;
+end;
 
 function TSSLImporter.TrySetStmt: Boolean;
 var L: string;
@@ -530,8 +538,15 @@ begin
     if TryGSayMessage then Continue;
     if TryOption then Continue;
     if TryCall then Continue;
+
+    // Handle regular if/elseif/else blocks (both skill_check and plain if)
     if (Pos('if(', L) = 1) or (Pos('if ', L) = 1) then
-    begin TryIf; Continue; end;
+    begin
+      if TryIf then Continue;
+      // Should not reach here - TryIf should always handle if-lines
+      Inc(FPos);
+      Continue;
+    end;
 
     if (Pos('start_gdialog(', L) = 1) or (Pos('gsay_start', L) = 1) or
         (Pos('gsay_end', L) = 1) or (Pos('end_dialogue', L) = 1) or

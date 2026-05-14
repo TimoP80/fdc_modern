@@ -119,11 +119,16 @@ Also improved Red `TextPrimary` from $004060FF (4.27:1) → $005070FF.
 - Added FMFImporter to DPR uses clause
 - **Compiler output: 0 errors**, 11 hints only
 
-### Done — SSL Importer Infinite Loop Fix (2026-05-14)
-- **Root cause**: `TrySetStmt` is a predicate returning `True` but does not advance `FPos`. `ParseBody` used `Continue` after it, which skipped the final `Inc(FPos)`, causing infinite loop on any `set_*`, `give_*`, `float_msg` line.
-- **Fix**: Added `Inc(FPos)` immediately after `if TrySetStmt then` in `ParseBody` (line 515)
-- **Cleanup**: Removed intrusive `FSafetyCount` iteration counter (was falsely triggering on nested loops). Replaced with `FPos`-based guard at 1000× file size as defensive measure, but later removed entirely as unnecessary since all code paths increment `FPos` naturally.
-- **Bonus**: Improved `if/else` depth tracking in `TryIf` — `end` before `else` no longer prematurely decrements `depth`
+### Done — SSL Importer Regular if/else Support (2026-05-14)
+- **Problem**: `TryIf` only handled `skill_check` blocks. Regular conditionals like `if (dude_is_male) then ...` caused `TryIf` to return `False`, but `ParseBody` unconditionally used `Continue` after calling it, skipping `Inc(FPos)` → infinite loop.
+- **Fix**: Rewrote `TryIf` to handle both `skill_check` and plain `if` statements. It now:
+  1. Detects if line starts with `if(` or `if ` (any conditional)
+  2. For `skill_check`, parses and stores skill check data (unchanged)
+  3. For plain `if`, simply skips the entire block body using the same depth-tracking logic
+  4. Always advances `FPos` on entry and returns `True` after successfully skipping the block
+  5. Calls itself recursively for nested `if` blocks to maintain correct depth
+- **Result**: Complex scripts like `abraham.ssl` with many regular conditionals now parse correctly without hanging
+
 
 ### Blocking
 - None
