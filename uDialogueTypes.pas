@@ -596,7 +596,7 @@ begin
   FLocales.Add('en-US');
   FActiveLocale := 'en-US';
    FName := 'New Dialogue';
-   FVersion := '1.0.2';
+   FVersion := '1.0.3';
    FAuthor := '';
   FCreatedDate := Now;
   FModifiedDate := Now;
