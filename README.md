@@ -97,6 +97,13 @@ Designed for:
 - **Asset Browser** — browse portraits, audio, scripts with image preview
 
 ---
+Screenshots:
+
+<img width="2559" height="1372" alt="fdc_modern_new" src="https://github.com/user-attachments/assets/2a613c83-714a-431e-a87a-ad8131f482b1" />
+
+---
+
+---
 
 ## Project Structure
 
