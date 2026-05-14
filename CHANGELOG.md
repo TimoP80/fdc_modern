@@ -2,6 +2,11 @@
 
 All notable changes to the Fallout Dialogue Creator project are documented in this file.
 
+## [1.0.5] — 2026-05-14
+
+### Fixed
+- **SSL imported nodes all positioned at (0,0)** — Added automatic hierarchical layout in `PostProcess` using BFS level assignment. Nodes now spread horizontally by dialogue depth (X = level × 300 + 50) and vertically by order within level (Y = index × 120 + 50). Works with complex scripts like `abraham.ssl`.
+
 ## [1.0.4] — 2026-05-14
 
 ### Fixed

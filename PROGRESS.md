@@ -129,6 +129,10 @@ Also improved Red `TextPrimary` from $004060FF (4.27:1) → $005070FF.
   5. Calls itself recursively for nested `if` blocks to maintain correct depth
 - **Result**: Complex scripts like `abraham.ssl` with many regular conditionals now parse correctly without hanging
 
+### Done — SSL Importer Automatic Layout (2026-05-14)
+- Added hierarchical auto-layout to `PostProcess` using BFS level assignment
+- Nodes are positioned by dialogue depth (X = level × 300 + 50) and vertical order within level (Y = index × 120 + 50)
+- Fixes issue where imported SSL nodes all appeared at (0,0)
 
 ### Blocking
 - None

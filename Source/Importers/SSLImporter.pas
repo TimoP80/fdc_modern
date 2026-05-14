@@ -642,7 +642,19 @@ procedure TSSLImporter.PostProcess;
 var
   pair: TPair<string, TSkillCheck>;
   node: TDialogueNode;
+  opt: TPlayerOption;
+  inDegree: TDictionary<string, Integer>;
+  visited: TDictionary<string, Boolean>;
+  levelDict: TDictionary<string, Integer>;
+  queue: TQueue<string>;
+  startNodeID: string;
+  levelNodes: TList<TList<string>>;
+  lvls: TArray<Integer>;
+  l, i: Integer;
+  nid: string;
+  xSpacing, ySpacing: Integer;
 begin
+  // === Original skill check assignment ===
   for pair in FTempSkillChecks do
   begin
     node := nil;
@@ -655,13 +667,137 @@ begin
     end;
   end;
 
+  // === Build in-degree map ===
+  inDegree := TDictionary<string, Integer>.Create;
+  for node in FProject.Nodes do
+    inDegree.Add(node.ID, 0);
+
+  for node in FProject.Nodes do
+  begin
+    if node.NextNodeID <> '' then
+      if inDegree.ContainsKey(node.NextNodeID) then
+        inDegree[node.NextNodeID] := inDegree[node.NextNodeID] + 1;
+    for i := 0 to node.PlayerOptions.Count - 1 do
+    begin
+      opt := node.PlayerOptions[i];
+      if opt.TargetNodeID <> '' then
+        if inDegree.ContainsKey(opt.TargetNodeID) then
+          inDegree[opt.TargetNodeID] := inDegree[opt.TargetNodeID] + 1;
+    end;
+  end;
+
+  // === Find start node ===
+  startNodeID := '';
+  for node in FProject.Nodes do
+    if inDegree[node.ID] = 0 then
+    begin
+      startNodeID := node.ID;
+      Break;
+    end;
+
+  if startNodeID = '' then
+    if FProject.Nodes.Count > 0 then
+      startNodeID := FProject.Nodes[0].ID;
+
+  // === BFS to compute levels ===
+  levelDict := TDictionary<string, Integer>.Create;
+  visited := TDictionary<string, Boolean>.Create;
+  queue := TQueue<string>.Create;
+
+  if startNodeID <> '' then
+  begin
+    queue.Enqueue(startNodeID);
+    visited.Add(startNodeID, True);
+    levelDict.Add(startNodeID, 0);
+  end;
+
+  while queue.Count > 0 do
+  begin
+    var currentID := queue.Dequeue;
+    var currentLevel := levelDict[currentID];
+    if not FNodeMap.ContainsKey(currentID) then Continue;
+    var currentNode := FNodeMap[currentID];
+
+    if currentNode.NextNodeID <> '' then
+    begin
+      var nextID := currentNode.NextNodeID;
+      if FNodeMap.ContainsKey(nextID) then
+        if not visited.ContainsKey(nextID) then
+        begin
+          visited.Add(nextID, True);
+          levelDict.Add(nextID, currentLevel + 1);
+          queue.Enqueue(nextID);
+        end;
+    end;
+
+    for i := 0 to currentNode.PlayerOptions.Count - 1 do
+    begin
+      opt := currentNode.PlayerOptions[i];
+      if opt.TargetNodeID <> '' then
+        if FNodeMap.ContainsKey(opt.TargetNodeID) then
+        begin
+          var tgt := opt.TargetNodeID;
+          if not visited.ContainsKey(tgt) then
+          begin
+            visited.Add(tgt, True);
+            levelDict.Add(tgt, currentLevel + 1);
+            queue.Enqueue(tgt);
+          end;
+        end;
+    end;
+  end;
+
+  // === Group nodes by level ===
+  levelNodes := TList<TList<string>>.Create;
+  for node in FProject.Nodes do
+  begin
+    var lvl := 0;
+    if levelDict.ContainsKey(node.ID) then lvl := levelDict[node.ID];
+    // Expand list to fit level
+    while levelNodes.Count <= lvl do
+      levelNodes.Add(TList<string>.Create);
+    levelNodes[lvl].Add(node.ID);
+  end;
+
+  // === Assign positions ===
+  xSpacing := 300;
+  ySpacing := 120;
+
+  for l := 0 to levelNodes.Count - 1 do
+  begin
+    levelNodes[l].Sort;
+    for i := 0 to levelNodes[l].Count - 1 do
+    begin
+      nid := levelNodes[l][i];
+      if FNodeMap.ContainsKey(nid) then
+      begin
+        node := FNodeMap[nid];
+        node.X := l * xSpacing + 50;
+        node.Y := i * ySpacing + 50;
+      end;
+    end;
+  end;
+
+  // === Cleanup ===
+  for i := 0 to levelNodes.Count - 1 do
+    levelNodes[i].Free;
+  levelNodes.Free;
+  levelDict.Free;
+  visited.Free;
+  queue.Free;
+  inDegree.Free;
+
+  // === Original warnings ===
   for node in FProject.Nodes do
   begin
     if (node.NextNodeID <> '') and not FNodeMap.ContainsKey(node.NextNodeID) then
       Warn('Node ' + node.ID + ' -> unknown: ' + node.NextNodeID);
-    for var opt in node.PlayerOptions do
+    for i := 0 to node.PlayerOptions.Count - 1 do
+    begin
+      opt := node.PlayerOptions[i];
       if (opt.TargetNodeID <> '') and not FNodeMap.ContainsKey(opt.TargetNodeID) then
         Warn('Node ' + node.ID + ' option -> unknown: ' + opt.TargetNodeID);
+    end;
   end;
 end;
 
