@@ -196,10 +196,20 @@ begin
       prevNode := node;
     end;
 
-    AProject.StartNodeID := startNodeID;
-    AProject.Name := 'Imported from .MSG';
+     AProject.StartNodeID := startNodeID;
+     AProject.Name := 'Imported from .MSG';
 
-    Result.Project := AProject;
+     // Auto-layout: simple horizontal chain
+     var x := 50;
+     var y := 50;
+     for var n in AProject.Nodes do
+     begin
+       n.X := x;
+       n.Y := y;
+       x := x + 250;
+     end;
+
+     Result.Project := AProject;
     Result.Success := (FErrors.Count = 0);
     Result.Errors := TStringList.Create;
     Result.Errors.Assign(FErrors);

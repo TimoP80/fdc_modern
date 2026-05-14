@@ -2,6 +2,11 @@
 
 All notable changes to the Fallout Dialogue Creator project are documented in this file.
 
+## [1.0.6] — 2026-05-14
+
+### Fixed
+- **MSG imported nodes all at (0,0)** — Added simple auto-layout to `MSGImporter`. Imported MSG nodes are now arranged in a horizontal chain (X += 250, Y = 50) so they appear in readable order. Previously they defaulted to (0,0) and required manual repositioning.
+
 ## [1.0.5] — 2026-05-14
 
 ### Fixed
