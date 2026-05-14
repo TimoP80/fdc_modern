@@ -145,11 +145,10 @@ TDialogueProject
 
 ### Canvas Rendering
 The `TNodeCanvas` is a custom `TCustomControl` with:
-- Software GDI rendering (no third-party libs)
+- Codeless rendering (no third-party libs)
 - Double-buffered `TBitmap` back-buffer
 - Bezier curve connections (20-segment approximation)
 - Culling for off-screen nodes
-- CRT scanline overlay effect
 - Minimap with viewport indicator
 
 ### Export Pipeline

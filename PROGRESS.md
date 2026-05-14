@@ -52,5 +52,54 @@ Also improved Red `TextPrimary` from $004060FF (4.27:1) → $005070FF.
 - Removed duplicate `ThemeManager` unit from dpr (conflicting with `uThemeManager`)
 - `uMainForm.pas` now uses `TThemeManager.ApplyToForm(Self)` for full recursive theming
 
+### Done — SSL/MSG Import Parsers
+- **`SSLImporter.pas`** — Self-contained .ssl parser; no dependency on `uAST`/`uLexer`/`uParser`
+- **`MSGImporter.pas`** — Rewritten to properly parse `.msg` files and produce a complete `TDialogueProject` with linked nodes (not just log messages). Parses `{id}{}{text}` format, sorts by ID, chains nodes linearly via `NextNodeID`, sets `StartNodeID` on the first node
+- Both integrated into main form Import menu
+
+### Done — Import Menu Restructure
+- Import moved from nested submenu under Export → standalone top-level **Import** menu (`miImport`)
+- `miImportSSL` and `miImportMSG` are now children of the Import menu
+- `miImportMSGClick` handler updated to use new `TMSGImportResult.Project` field — imports now create a usable project and load it into the UI
+
+### Done — Dialogue Tester (Preview) Fix
+- Fixed `BuildOptionButtons` in `uPreviewSystem.pas`: the "Continue" button now only appears when the node has **no** player options. Previously, nodes with both a `NextNodeID` (from `call`) and player options would show both a Continue button and the options simultaneously, which is incorrect Fallout-style dialogue behavior. Now: options only show player choices, and Continue only appears when there are no choices (automatic advance to next node).
+
+### Done — SSL Import Stability & Performance Fixes
+- **Completely rewritten SSL parser** with proper recursive descent:
+  - Root cause: original parser had no `begin`/`end` depth tracking — any `end` inside an `if` block would prematurely terminate the enclosing procedure, corrupting all subsequent parsing
+  - New `ParseBody(Depth)` method tracks nesting depth; `end` only closes its matching `begin`
+  - `if/else/end` blocks properly skipped during procedure body parsing
+- **Fixed wrong option argument mapping** — `giq_option(reaction, NAME, msg_id, target, skill)` had 5 args but parser extracted only 2, grabbing `reaction` as msg and `NAME` as target. Added `ExtractFive()` to correctly map arg3→option text, arg4→target node.
+- **Added Fallout 2 dialogue command support**: `gsay_reply`, `gsay_message`, `display_msg`
+- **Fixed forward declaration handling**: `procedure name;` lines now properly skipped
+- **Added `#include`/`#define` preprocessor skipping**
+- **Added `call(target)` parenthesized form alongside `call target;`**
+- **Added parser safety limit** — exits after `FLines.Count * 4` iterations
+
+### Done — Bug Fixes (this session)
+- Fixed 26+ compilation errors in `SSLImporter.pas`:
+  - Moved method declarations (`ExtractStringArg`, `SkillNameToEnum`, `ParseSetStatement`) from private to public visibility
+  - Replaced `CurrentLine` references with `FCurrentLine` field + `GetLine` method
+  - Removed `NodeTypes` from uses clause to resolve type collision (`TDialogueNode`, `TSkillType` exist in both `NodeTypes` and `uDialogueTypes`)
+  - Added missing units: `System.StrUtils` (PosEx), `System.IOUtils` (TFile), `System.Character` (CharInSet)
+  - Fixed WideChar-in-set warnings using `CharInSet`
+  - Changed `node.FID`/`node.FText` to use public properties `node.ID`/`node.Text`
+- Fixed `uDialogueTypes.pas`: made `ID` property writable (`read FID write FID`)
+- Fixed `MSGImporter.pas`:
+  - Changed `{ }` comment to `(* *)` comment to avoid premature close on `}`, `Messages`
+  - Added missing units: `System.Generics.Collections`, `System.StrUtils`, `System.IOUtils`
+  - Fixed `PosEx` availability, `TList<>` generic, unused `p3` variable
+- Fixed `uMainForm.pas`: Added `miImportSSL`, `miImportMSG` to private field declarations
+- Fixed `NodePalette.pas`: Replaced hardcoded Windows colors (`clGreen`, `clBlack`, `clLime`) with theme system colors (`TThemeManager.Current.BgMedium`, `TThemeManager.Current.BgDark`, `TThemeManager.Current.TextPrimary`)
+
+### Done — Build Status
+- **Compiler output: 0 errors**, only pre-existing hints (unused variables/symbols)
+- All 10485 lines compile successfully in 0.48 seconds
+
+### Done — Bug Fixes (2026-05-14)
+- Fixed `uNodeCanvas.pas(585): E2003 Undeclared identifier: 'accent'` — added `accent` to local var declaration in `DrawNode`
+  - Cleaned up dead code: removed stale `accent` assignment using `NODE_ACCENT_COLORS` (now theme-driven) and unused loop counter `i` in `DrawNodeBody`
+
 ### Blocking
 - None

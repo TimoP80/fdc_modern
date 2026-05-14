@@ -58,7 +58,7 @@ FConnectFromOpt: Integer;
      procedure DrawConnections;
      procedure DrawNodes;
      procedure DrawNode(node: TDialogueNode);
-     procedure DrawNodeHeader(node: TDialogueNode; const r: TRect);
+     procedure DrawNodeHeader(node: TDialogueNode; const r: TRect; headerColor: TColor);
      procedure DrawNodeBody(node: TDialogueNode; const r: TRect);
      procedure DrawNodePorts(node: TDialogueNode; const r: TRect);
      procedure DrawMinimap;
@@ -573,16 +573,18 @@ end;
 
 procedure TNodeCanvas.DrawNode(node: TDialogueNode);
 var
-  r: TRect;
-  accent: TColor;
-  badgeR: TRect;
+   r: TRect;
+   bodyColor, headerColor: TColor;
+   badgeR: TRect;
 begin
-  r := GetNodeRect(node);
-  if (r.Right < -20) or (r.Left > Width + 20) or
-     (r.Bottom < -20) or (r.Top > Height + 20) then
-    Exit;  // Off screen culling
+   r := GetNodeRect(node);
+   if (r.Right < -20) or (r.Left > Width + 20) or
+      (r.Bottom < -20) or (r.Top > Height + 20) then
+     Exit;  // Off screen culling
 
-  accent := NODE_ACCENT_COLORS[node.NodeType];
+   // Use theme-aware colors for node body and header
+  bodyColor := TThemeManager.Current.BgMedium;
+  headerColor := TThemeManager.Current.BgLight;
 
   // Glow for selected or start node
   if node.Selected then
@@ -595,14 +597,14 @@ begin
   FBuffer.Canvas.Pen.Style := psClear;
   FBuffer.Canvas.RoundRect(r.Left + 3, r.Top + 4, r.Right + 3, r.Bottom + 4, NODE_CORNER, NODE_CORNER);
 
-  // Node body background
-  FBuffer.Canvas.Brush.Color := node.Color;
+  // Node body background — use theme BgMedium
+  FBuffer.Canvas.Brush.Color := bodyColor;
   FBuffer.Canvas.Pen.Color := if node.Selected then TThemeManager.Current.AccentPrimary else TThemeManager.Current.BorderDark;
   FBuffer.Canvas.Pen.Width := if node.Selected then 2 else 1;
   FBuffer.Canvas.Pen.Style := psSolid;
   FBuffer.Canvas.RoundRect(r.Left, r.Top, r.Right, r.Bottom, NODE_CORNER, NODE_CORNER);
 
-  DrawNodeHeader(node, r);
+  DrawNodeHeader(node, r, headerColor);
   DrawNodeBody(node, r);
   DrawNodePorts(node, r);
 
@@ -622,28 +624,24 @@ begin
   end;
 end;
 
-procedure TNodeCanvas.DrawNodeHeader(node: TDialogueNode; const r: TRect);
+procedure TNodeCanvas.DrawNodeHeader(node: TDialogueNode; const r: TRect; headerColor: TColor);
 var
-  headerR: TRect;
-  accent: TColor;
-  title: string;
-  markerSize: Integer;
-begin
-  accent := NODE_ACCENT_COLORS[node.NodeType];
-  headerR := Rect(r.Left + 1, r.Top + 1, r.Right - 1, r.Top + Round(HEADER_HEIGHT * FZoom));
+   headerR: TRect;
+   accent: TColor;
+   title: string;
+   markerSize: Integer;
+ begin
+   accent := NODE_ACCENT_COLORS[node.NodeType];
+   headerR := Rect(r.Left + 1, r.Top + 1, r.Right - 1, r.Top + Round(HEADER_HEIGHT * FZoom));
 
-  // Header gradient-like background (two tones)
-  FBuffer.Canvas.Brush.Color := TColor(
-    Max(0, GetRValue(node.Color) + 15) or
-    (Max(0, GetGValue(node.Color) + 15) shl 8) or
-    (Max(0, GetBValue(node.Color) + 15) shl 16)
-  );
-  FBuffer.Canvas.Pen.Style := psClear;
-  FBuffer.Canvas.FillRect(headerR);
+   // Header background using theme color
+   FBuffer.Canvas.Brush.Color := headerColor;
+   FBuffer.Canvas.Pen.Style := psClear;
+   FBuffer.Canvas.FillRect(headerR);
 
-  // Accent border on top of header
-  FBuffer.Canvas.Brush.Color := accent;
-  FBuffer.Canvas.FillRect(Rect(r.Left + 1, r.Top + 1, r.Right - 1, r.Top + Max(2, Round(3 * FZoom))));
+   // Accent border on top of header
+   FBuffer.Canvas.Brush.Color := accent;
+   FBuffer.Canvas.FillRect(Rect(r.Left + 1, r.Top + 1, r.Right - 1, r.Top + Max(2, Round(3 * FZoom))));
 
   // Node type icon marker
   markerSize := Round(8 * FZoom);
@@ -687,12 +685,12 @@ var
    bodyR: TRect;
    textPreview: string;
    lineY: Integer;
-   opt: TPlayerOption;
-   optText: string;
-   i, j: Integer;
+opt: TPlayerOption;
+    optText: string;
+    j: Integer;
 begin
-  bodyR := Rect(r.Left + 1, r.Top + Round(HEADER_HEIGHT * FZoom) + 1, r.Right - 1, r.Bottom - 1);
-  FBuffer.Canvas.Brush.Color := node.Color;
+bodyR := Rect(r.Left + 1, r.Top + Round(HEADER_HEIGHT * FZoom) + 1, r.Right - 1, r.Bottom - 1);
+   FBuffer.Canvas.Brush.Color := TThemeManager.Current.BgMedium;
   FBuffer.Canvas.Pen.Style := psClear;
   FBuffer.Canvas.FillRect(bodyR);
 
@@ -887,20 +885,8 @@ begin
 end;
 
 procedure TNodeCanvas.DrawScanlines;
-var
-  y: Integer;
 begin
-  // Subtle CRT scanline effect
-  FBuffer.Canvas.Pen.Style := psSolid;
-  FBuffer.Canvas.Pen.Width := 1;
-  FBuffer.Canvas.Pen.Color := $0F000000;
-  y := 0;
-  while y < Height do
-  begin
-    FBuffer.Canvas.MoveTo(0, y);
-    FBuffer.Canvas.LineTo(Width, y);
-    Inc(y, 4);
-  end;
+  // Scanline effect removed — hindered text readability
 end;
 
 procedure TNodeCanvas.DrawSelectionRect;
