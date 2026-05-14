@@ -67,9 +67,10 @@ FConnectFromOpt: Integer;
      procedure DrawGlowRect(const r: TRect; color: TColor; glowSize: Integer);
      procedure DrawScanlines;
 function WorldToScreen(x, y: Integer): TPoint;
-      function ScreenToWorld(x, y: Integer): TPoint;
-      function NodeAtPoint(pt: TPoint): TDialogueNode;
-      function SnapToGrid(val: Integer): Integer;
+       function ScreenToWorld(x, y: Integer): TPoint;
+       function NodeAtPoint(pt: TPoint): TDialogueNode;
+       function PortAtPoint(pt: TPoint): Integer;
+       function SnapToGrid(val: Integer): Integer;
       procedure BuildPopupMenu;
       procedure MenuAddNPCClick(Sender: TObject);
       procedure MenuAddPlayerClick(Sender: TObject);
@@ -297,6 +298,37 @@ begin
   end;
 end;
 
+function TNodeCanvas.PortAtPoint(pt: TPoint): Integer;
+var
+  node: TDialogueNode;
+  nr: TRect;
+  portR: TRect;
+  i: Integer;
+  portCount: Integer;
+begin
+  Result := -1;
+  if not Assigned(FProject) then Exit;
+  node := NodeAtPoint(pt);
+  if not Assigned(node) then Exit;
+  
+  nr := GetNodeRect(node);
+  portCount := Max(1, node.PlayerOptions.Count);
+  
+  for i := 0 to portCount - 1 do
+  begin
+    portR := Rect(nr.Right - Round(PORT_RADIUS * FZoom),
+      nr.Top + Round(HEADER_HEIGHT * FZoom) + i * Round(22 * FZoom) + Round(11 * FZoom) - Round(PORT_RADIUS * FZoom),
+      nr.Right + Round(PORT_RADIUS * FZoom),
+      nr.Top + Round(HEADER_HEIGHT * FZoom) + i * Round(22 * FZoom) + Round(11 * FZoom) + Round(PORT_RADIUS * FZoom));
+    if PtInRect(portR, pt) then
+    begin
+      Result := i;
+      FConnectFrom := node;
+      Exit;
+    end;
+  end;
+end;
+
 procedure TNodeCanvas.Paint;
 var
   nr: TRect;
@@ -416,11 +448,11 @@ begin
       end;
     end;
 
-    // Option links
-    for j := 0 to node.PlayerOptions.Count - 1 do
-    begin
-      opt := node.PlayerOptions[j];
-      sy := nr.Top + Round(HEADER_HEIGHT * FZoom) + i * Round(22 * FZoom) + Round(11 * FZoom);
+// Option links
+     for j := 0 to node.PlayerOptions.Count - 1 do
+     begin
+       opt := node.PlayerOptions[j];
+       sy := nr.Top + Round(HEADER_HEIGHT * FZoom) + j * Round(22 * FZoom) + Round(11 * FZoom);
 
       if opt.TargetNodeID <> '' then
       begin
@@ -901,23 +933,29 @@ end;
 procedure TNodeCanvas.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
    node: TDialogueNode;
-   wp: TPoint;
    n: TDialogueNode;
    i: Integer;
 begin
-  SetFocus;
-  FMouseStart := Point(X, Y);
-  FLastMousePos := Point(X, Y);
-  wp := ScreenToWorld(X, Y);
+   SetFocus;
+   FMouseStart := Point(X, Y);
+   FLastMousePos := Point(X, Y);
 
-  if Button = mbRight then
-  begin
-    FRightClickNode := NodeAtPoint(Point(X, Y));
-    FPopupMenu.Popup(ClientToScreen(Point(X, Y)).X, ClientToScreen(Point(X, Y)).Y);
-    Exit;
-  end;
+   if Button = mbRight then
+   begin
+     FRightClickNode := NodeAtPoint(Point(X, Y));
+     FPopupMenu.Popup(ClientToScreen(Point(X, Y)).X, ClientToScreen(Point(X, Y)).Y);
+     Exit;
+   end;
 
-  node := NodeAtPoint(Point(X, Y));
+   // Check for port click to start connection
+   if PortAtPoint(Point(X, Y)) >= 0 then
+   begin
+     FAction := ncaConnecting;
+     Invalidate;
+     Exit;
+   end;
+
+   node := NodeAtPoint(Point(X, Y));
 
   if Button = mbLeft then
   begin

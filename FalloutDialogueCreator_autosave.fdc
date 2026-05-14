@@ -6,83 +6,27 @@
   "version": "1.0.0",
   "author": "",
   "startNodeId": "",
-  "createdDate": "14.5.2026 8.16.46",
-  "modifiedDate": "14.5.2026 8.17.32",
+  "createdDate": "14.5.2026 15.40.03",
+  "modifiedDate": "14.5.2026 15.40.55",
   "activeLocale": "en-US",
   "locales": "en-US",
   "tags": "",
   "nodes": [
-    {
-      "id": "N_0D68580543BF",
-      "type": "0",
-      "text": "",
-      "speaker": "",
-      "portrait": "",
-      "voice": "",
-      "x": 100,
-      "y": 60,
-      "width": 240,
-      "height": 120,
-      "color": 2825999,
-      "comment": "",
-      "questId": "",
-      "questFlag": "",
-      "scriptFile": "",
-      "reputation": 0,
-      "karma": -1000,
-      "tag": "",
-      "notes": "",
-      "nextNodeId": "",
-      "isStartNode": true,
-      "randomWeight": 1,
-      "combatScript": "",
-      "tradeInventory": "",
-      "options": [
-      ],
-      "conditions": [
-      ],
-      "scripts": [
-      ]
-    },
-    {
-      "id": "N_D5B43228095C",
-      "type": "2",
-      "text": "",
-      "speaker": "",
-      "portrait": "",
-      "voice": "",
-      "x": 320,
-      "y": 40,
-      "width": 240,
-      "height": 120,
-      "color": 2497032,
-      "comment": "",
-      "questId": "",
-      "questFlag": "",
-      "scriptFile": "",
-      "reputation": 0,
-      "karma": -1000,
-      "tag": "",
-      "notes": "",
-      "nextNodeId": "",
-      "isStartNode": false,
-      "randomWeight": 1,
-      "combatScript": "",
-      "tradeInventory": "",
-      "options": [
-      ],
-      "conditions": [
-      ],
-      "scripts": [
-        {
-          "event": 1,
-          "code": "// Script code here\r\nprocedure OnNodeEnter(npc, player: TEntity; nodeID: string);\r\nbegin\r\n  // Your code\r\nend;",
-          "enabled": true
-        }
-      ]
-    }
   ],
   "floatMessages": [
+    {
+      "id": "N_E33688113BC1",
+      "category": "Ambient",
+      "text": "New float message",
+      "priority": 5,
+      "weight": 1,
+      "condition": "",
+      "timedDuration": 3.0,
+      "isAmbient": true,
+      "isCombatTaunt": false,
+      "isContextSensitive": false,
+      "localeKey": ""
+    }
   ],
   "globalVars": [
   ]

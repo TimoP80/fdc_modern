@@ -33,7 +33,10 @@ uses
    ProjectManager in 'Source\Core\ProjectManager.pas',
    NodePalette in 'Source\UI\NodePalette.pas',
    FalloutUtils in 'Source\Utilities\FalloutUtils.pas',
-   Logger in 'Source\Utilities\Logger.pas';
+   Logger in 'Source\Utilities\Logger.pas',
+SSLImporter in 'Source\Importers\SSLImporter.pas',
+    MSGImporter in 'Source\Importers\MSGImporter.pas',
+    FMFImporter in 'Source\Importers\FMFImporter.pas';
 
 {$R *.res}
 

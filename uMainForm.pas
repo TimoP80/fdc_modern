@@ -1,16 +1,16 @@
-unit uMainForm;
+﻿unit uMainForm;
 
 interface
 
 uses
-  System.SysUtils, System.Classes, System.Types, System.UITypes,
-  System.Generics.Collections, System.IOUtils,
-  Winapi.Windows, Winapi.Messages,
-  Vcl.Forms, Vcl.Controls, Vcl.StdCtrls, Vcl.ComCtrls, Vcl.ExtCtrls,
-  Vcl.Menus, Vcl.ToolWin, Vcl.Buttons, Vcl.Graphics, Vcl.Dialogs,
-  Vcl.ActnList, Vcl.Imaging.PNGImage,
-  uDialogueTypes, uNodeCanvas, uThemeManager, uProjectManager,
-  uExportManager;
+   System.SysUtils, System.Classes, System.Types, System.UITypes,
+   System.Generics.Collections, System.IOUtils, System.Win.Registry,
+   Winapi.Windows, Winapi.Messages,
+   Vcl.Forms, Vcl.Controls, Vcl.StdCtrls, Vcl.ComCtrls, Vcl.ExtCtrls,
+   Vcl.Menus, Vcl.ToolWin, Vcl.Buttons, Vcl.Graphics, Vcl.Dialogs,
+   Vcl.ActnList, Vcl.Imaging.PNGImage,
+uDialogueTypes, uNodeCanvas, uThemeManager, uProjectManager,
+   uExportManager, SSLImporter, MSGImporter, FMFImporter;
 
 type
   TMainForm = class(TForm)
@@ -22,6 +22,7 @@ type
     FRedoStack: TObjectList<TDialogueProject>;
     FAutoSaveTimer: TTimer;
     FModifiedMarker: Boolean;
+    FRecentProjects: TStringList;
 
     //=== Layout panels ===
     pnlMain: TPanel;
@@ -105,8 +106,10 @@ type
     miPreview, miExportJSON, miExportMSG, miExportSSL, miExportPkg: TMenuItem;
     miFloatMessages, miValidation, miLocalization, miScriptEditor: TMenuItem;
     miThemeAmber, miThemeGreen, miThemeCyan, miThemeRed, miThemeWhite: TMenuItem;
-    miShowGrid, miShowMinimap, miSnapGrid: TMenuItem;
-    miAbout: TMenuItem;
+miShowGrid, miShowMinimap, miSnapGrid: TMenuItem;
+miImport: TMenuItem;
+      miImportSSL, miImportMSG, miImportFMF: TMenuItem;
+     miAbout: TMenuItem;
 
     //=== State ===
     FSelectedNodeID: string;
@@ -140,6 +143,8 @@ type
     procedure MarkModified;
     procedure UpdateTitleBar;
     function ConfirmDiscardChanges: Boolean;
+    procedure UpdateRecentProjects(const path: string);
+    procedure PopulateRecentMenu;
 
     //=== Node operations ===
     procedure AddNodeToCanvas(nodeType: TNodeType);
@@ -180,13 +185,17 @@ type
     procedure miExitClick(Sender: TObject);
     procedure miUndoClick(Sender: TObject);
     procedure miRedoClick(Sender: TObject);
+    procedure miRecentClick(Sender: TObject);
     procedure miSelectAllClick(Sender: TObject);
     procedure miDeleteSelectedClick(Sender: TObject);
     procedure miPreviewClick(Sender: TObject);
-    procedure miExportJSONClick(Sender: TObject);
-    procedure miExportMSGClick(Sender: TObject);
-    procedure miExportSSLClick(Sender: TObject);
-    procedure miExportPkgClick(Sender: TObject);
+procedure miExportJSONClick(Sender: TObject);
+     procedure miExportMSGClick(Sender: TObject);
+     procedure miExportSSLClick(Sender: TObject);
+     procedure miExportPkgClick(Sender: TObject);
+procedure miImportSSLClick(Sender: TObject);
+      procedure miImportMSGClick(Sender: TObject);
+      procedure miImportFMFClick(Sender: TObject);
     procedure miFloatMessagesClick(Sender: TObject);
     procedure miValidationClick(Sender: TObject);
     procedure miLocalizationClick(Sender: TObject);
@@ -248,6 +257,7 @@ begin
    FUndoStack := TObjectList<TDialogueProject>.Create(False);
    FRedoStack := TObjectList<TDialogueProject>.Create(False);
    FProjectManager := TProjectManager.Create;
+   FRecentProjects := TStringList.Create;
    FormCreate(Self);
 end;
 
@@ -256,11 +266,14 @@ begin
   FUndoStack.Free;
   FRedoStack.Free;
   FProjectManager.Free;
+  FRecentProjects.Free;
   if Assigned(FProject) then FProject.Free;
   inherited;
 end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
+var
+  i: Integer;
 begin
   TThemeManager.ApplyTheme(tsAmber);
 
@@ -274,6 +287,18 @@ begin
   BuildToolbar;
 
   ApplyTheme;
+
+  // Load recent projects from registry
+  with TRegistry.Create do
+  try
+    if OpenKeyReadOnly('\Software\FalloutDialogueCreator\RecentProjects') then
+      for i := 0 to 9 do
+        if ValueExists('File' + IntToStr(i)) then
+          FRecentProjects.Add(ReadString('File' + IntToStr(i)));
+  finally
+    Free;
+  end;
+  PopulateRecentMenu;
 
   // Autosave timer
   FAutoSaveTimer := TTimer.Create(Self);
@@ -472,10 +497,22 @@ begin
 
   mi := TMenuItem.Create(Self); mi.Caption := '-'; miExportMenu.Add(mi);
 
-  miExportPkg := TMenuItem.Create(Self); miExportPkg.Caption := 'Export &Engine Package...';
-  miExportPkg.OnClick := miExportPkgClick; miExportMenu.Add(miExportPkg);
+miExportPkg := TMenuItem.Create(Self); miExportPkg.Caption := 'Export &Engine Package...';
+   miExportPkg.OnClick := miExportPkgClick; miExportMenu.Add(miExportPkg);
 
-  // HELP
+   // IMPORT (top-level menu)
+   miImport := TMenuItem.Create(Self); miImport.Caption := '&Import'; mmMain.Items.Add(miImport);
+
+miImportSSL := TMenuItem.Create(Self); miImportSSL.Caption := 'Import from .&SSL Script...';
+    miImportSSL.OnClick := miImportSSLClick; miImport.Add(miImportSSL);
+
+    miImportMSG := TMenuItem.Create(Self); miImportMSG.Caption := 'Import from .&MSG File...';
+    miImportMSG.OnClick := miImportMSGClick; miImport.Add(miImportMSG);
+
+    miImportFMF := TMenuItem.Create(Self); miImportFMF.Caption := 'Import from .&FMF File...';
+    miImportFMF.OnClick := miImportFMFClick; miImport.Add(miImportFMF);
+
+   // HELP
   miHelp := TMenuItem.Create(Self); miHelp.Caption := '&Help'; mmMain.Items.Add(miHelp);
 
   miAbout := TMenuItem.Create(Self); miAbout.Caption := '&About Fallout Dialogue Creator';
@@ -1086,9 +1123,64 @@ begin
     FProject := proj;
     FSelectedNodeID := '';
     LoadProjectIntoUI;
+    UpdateRecentProjects(FProject.FilePath);
     Log('Project loaded: ' + FProject.Name + '  (' + IntToStr(FProject.Nodes.Count) + ' nodes)');
     UpdateTitleBar;
   end;
+end;
+
+procedure TMainForm.UpdateRecentProjects(const path: string);
+var
+  i: Integer;
+begin
+  if path = '' then Exit;
+  for i := FRecentProjects.Count - 1 downto 0 do
+    if FRecentProjects[i] = path then
+      FRecentProjects.Delete(i);
+  FRecentProjects.Insert(0, path);
+  while FRecentProjects.Count > 10 do
+    FRecentProjects.Delete(FRecentProjects.Count - 1);
+  with TRegistry.Create do
+  try
+    if OpenKey('\Software\FalloutDialogueCreator\RecentProjects', True) then
+      for i := 0 to 9 do
+        if i < FRecentProjects.Count then
+          WriteString('File' + IntToStr(i), FRecentProjects[i]);
+  finally
+    Free;
+  end;
+  PopulateRecentMenu;
+end;
+
+procedure TMainForm.PopulateRecentMenu;
+var
+  i: Integer;
+  mi: TMenuItem;
+begin
+  while (miFile.Count > 0) and (miFile.Items[miFile.Count - 1] <> miRecentSep) do
+  begin
+    mi := miFile.Items[miFile.Count - 1];
+    if mi <> miRecentSep then
+    begin
+      mi.OnClick := nil;
+      miFile.Remove(mi);
+    end;
+  end;
+  for i := 0 to 9 do
+    if i < FRecentProjects.Count then
+    begin
+      mi := TMenuItem.Create(Self);
+      mi.Caption := '&' + IntToStr(i + 1) + ' ' + ExtractFileName(FRecentProjects[i]);
+      mi.Hint := FRecentProjects[i];
+      mi.OnClick := miRecentClick;
+      miFile.Insert(miFile.IndexOf(miRecentSep) + 1 + i, mi);
+    end;
+end;
+
+procedure TMainForm.miRecentClick(Sender: TObject);
+begin
+  if Sender is TMenuItem then
+    OpenProject(TMenuItem(Sender).Hint);
 end;
 
 procedure TMainForm.SaveProject(saveAs: Boolean);
@@ -1655,6 +1747,123 @@ begin
         Log('Package export failed.', 2);
     finally mgr.Free; end;
   finally dlg.Free; end;
+end;
+
+procedure TMainForm.miImportSSLClick(Sender: TObject);
+var dlg: TOpenDialog; importer: TSSLImporter; importedProject: TDialogueProject;
+  res: TSSLImportResult;
+begin
+  dlg := TOpenDialog.Create(nil);
+  try
+    dlg.Filter := 'SSL Script|*.ssl|All Files|*.*';
+    dlg.Title := 'Import .SSL Script';
+    if not dlg.Execute then Exit;
+
+    importer := TSSLImporter.Create;
+    try
+      res := importer.ImportFromFile(dlg.FileName, importedProject);
+      if res.Success and Assigned(importedProject) then
+      begin
+        FreeAndNil(FProject);
+        FProject := importedProject;
+        FProject.Name := ChangeFileExt(ExtractFileName(dlg.FileName), '');
+        FProject.FilePath := dlg.FileName;
+        LoadProjectIntoUI;
+        Log('SSL import complete: ' + IntToStr(res.NodeCount) + ' nodes imported.');
+        if res.WarningCount > 0 then
+          Log(IntToStr(res.WarningCount) + ' warnings during import.', 1);
+      end
+      else
+      begin
+        Log('SSL import failed.', 2);
+        if res.Errors.Count > 0 then
+          for var i := 0 to res.Errors.Count - 1 do
+            Log('  ' + res.Errors[i], 2);
+      end;
+    finally
+      importer.Free;
+    end;
+  finally
+    dlg.Free;
+  end;
+end;
+
+procedure TMainForm.miImportMSGClick(Sender: TObject);
+var dlg: TOpenDialog; importer: TMSGImporter; importedProject: TDialogueProject;
+   res: TMSGImportResult;
+begin
+   dlg := TOpenDialog.Create(nil);
+   try
+     dlg.Filter := 'MSG File|*.msg|All Files|*.*';
+     dlg.Title := 'Import .MSG File';
+     if not dlg.Execute then Exit;
+
+     importer := TMSGImporter.Create;
+     try
+       res := importer.ImportFromFile(dlg.FileName, importedProject);
+       if res.Success and Assigned(importedProject) then
+       begin
+         FreeAndNil(FProject);
+         FProject := importedProject;
+         FProject.Name := ChangeFileExt(ExtractFileName(dlg.FileName), '');
+         FProject.FilePath := dlg.FileName;
+         LoadProjectIntoUI;
+         Log('MSG import complete: ' + IntToStr(res.NodeCount) + ' nodes imported.');
+         if res.WarningCount > 0 then
+           Log(IntToStr(res.WarningCount) + ' warnings during import.', 1);
+       end
+       else
+       begin
+         Log('MSG import failed.', 2);
+         if res.Errors <> nil then
+           for var i := 0 to res.Errors.Count - 1 do
+             Log('  ' + res.Errors[i], 2);
+       end;
+     finally
+       importer.Free;
+     end;
+   finally
+     dlg.Free;
+   end;
+end;
+
+procedure TMainForm.miImportFMFClick(Sender: TObject);
+var dlg: TOpenDialog; importer: TFMFImporter; importedProject: TDialogueProject;
+   res: TFMFImportResult;
+begin
+   dlg := TOpenDialog.Create(nil);
+   try
+     dlg.Filter := 'FMF File|*.fmf|All Files|*.*';
+     dlg.Title := 'Import .FMF File';
+     if not dlg.Execute then Exit;
+
+     importer := TFMFImporter.Create;
+     try
+       res := importer.ImportFromFile(dlg.FileName, importedProject);
+       if res.Success and Assigned(importedProject) then
+       begin
+         FreeAndNil(FProject);
+         FProject := importedProject;
+         FProject.Name := ChangeFileExt(ExtractFileName(dlg.FileName), '');
+         FProject.FilePath := dlg.FileName;
+         LoadProjectIntoUI;
+         Log('FMF import complete: ' + IntToStr(res.NodeCount) + ' nodes imported.');
+         if res.WarningCount > 0 then
+           Log(IntToStr(res.WarningCount) + ' warnings during import.', 1);
+       end
+       else
+       begin
+         Log('FMF import failed.', 2);
+         if res.Errors <> nil then
+           for var i := 0 to res.Errors.Count - 1 do
+             Log('  ' + res.Errors[i], 2);
+       end;
+     finally
+       importer.Free;
+     end;
+   finally
+     dlg.Free;
+   end;
 end;
 
 procedure TMainForm.miFloatMessagesClick(Sender: TObject);

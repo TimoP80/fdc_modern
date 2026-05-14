@@ -43,10 +43,10 @@ type
     FLog: TStringList;
 
 function ExportToJSON(const opts: TExportOptions): TExportResult;
-     function ExportToMSG(const opts: TExportOptions): TExportResult;
-     function ExportToSSL(const opts: TExportOptions): TExportResult;
-     function ExportToLocalization(const opts: TExportOptions): TExportResult;
-     function ExportPackage(const opts: TExportOptions): TExportResult;
+      function ExportToMSG(const opts: TExportOptions): TExportResult;
+      function ExportToSSL(const opts: TExportOptions): TExportResult;
+      function ExportToLocalization(const opts: TExportOptions): TExportResult;
+      function ExportPackage(const opts: TExportOptions): TExportResult;
 
      function GenerateMSGContent: TStringList;
      function GenerateSSLContent: TStringList;

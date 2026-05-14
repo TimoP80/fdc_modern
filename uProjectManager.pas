@@ -8,7 +8,7 @@ interface
 uses
   System.SysUtils, System.Classes, System.Math, System.IOUtils,
   Vcl.Dialogs,
-  uDialogueTypes;
+  uDialogueTypes, FMFImporter;
 
 type
   TRecentProject = record
@@ -132,6 +132,9 @@ var
   dlg: TOpenDialog;
   filePath: string;
   proj: TDialogueProject;
+  ext: string;
+  importer: TFMFImporter;
+  fmfRes: TFMFImportResult;
 begin
   Result := nil;
   filePath := path;
@@ -139,7 +142,7 @@ begin
   begin
     dlg := TOpenDialog.Create(nil);
     try
-      dlg.Filter := 'Fallout Dialogue Creator|*.fdc;*.json|All Files|*.*';
+      dlg.Filter := 'Fallout Dialogue Creator|*.fdc;*.json;*.fmf|All Files|*.*';
       dlg.Title := 'Open Dialogue Project';
       if not dlg.Execute then Exit;
       filePath := dlg.FileName;
@@ -148,6 +151,30 @@ begin
     end;
   end;
   if not FileExists(filePath) then Exit;
+
+  // Handle .fmf files with the FMF importer
+  ext := LowerCase(ExtractFileExt(filePath));
+  if ext = '.fmf' then
+  begin
+    importer := TFMFImporter.Create;
+    try
+      fmfRes := importer.ImportFromFile(filePath, proj);
+      if fmfRes.Success and Assigned(proj) then
+      begin
+        AddToRecent(filePath, proj.Name);
+        Result := proj;
+      end
+      else
+      begin
+        if Assigned(proj) then proj.Free;
+      end;
+    finally
+      importer.Free;
+    end;
+    Exit;
+  end;
+
+  // JSON / FDC format
   proj := TDialogueProject.Create;
   if proj.LoadFromFile(filePath) then
   begin
@@ -173,7 +200,7 @@ begin
   begin
     dlg := TSaveDialog.Create(nil);
     try
-      dlg.Filter := 'Fallout Dialogue Creator|*.fdc|JSON File|*.json|All Files|*.*';
+      dlg.Filter := 'Fallout Dialogue Creator|*.fdc|JSON File|*.json|FMF File|*.fmf|All Files|*.*';
       dlg.Title := 'Save Dialogue Project';
       dlg.DefaultExt := 'fdc';
       dlg.FileName := ChangeFileExt(ExtractFileName(project.Name), '');

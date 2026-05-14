@@ -3,8 +3,9 @@ unit NodePalette;
 interface
 
 uses
-   System.SysUtils, System.Classes, System.TypInfo,
-   Vcl.Controls, Vcl.ExtCtrls, Vcl.Graphics, Vcl.StdCtrls, NodeTypes;
+    System.SysUtils, System.Classes, System.TypInfo,
+    Vcl.Controls, Vcl.ExtCtrls, Vcl.Graphics, Vcl.StdCtrls,
+    NodeTypes, uThemeManager;
 
 type
   TNodePalette = class(TPanel)
@@ -24,17 +25,18 @@ implementation
 
 constructor TNodePalette.Create(AOwner: TComponent);
 begin
-  inherited;
-  Align := alLeft;
-  Width := 200;
-  Color := clGreen;
-  FListBox := TListBox.Create(Self);
-  FListBox.Parent := Self;
-  FListBox.Align := alClient;
-  FListBox.Color := clBlack;
-  FListBox.Font.Color := clLime;
-  FListBox.OnClick := ListBoxClick;
-  PopulateNodes;
+   inherited;
+   Align := alLeft;
+   Width := 200;
+   Color := TThemeManager.Current.BgMedium;
+   FListBox := TListBox.Create(Self);
+   FListBox.Parent := Self;
+   FListBox.Align := alClient;
+   FListBox.Color := TThemeManager.Current.BgDark;
+   FListBox.Font.Color := TThemeManager.Current.TextPrimary;
+   FListBox.Font.Name := TThemeManager.Current.FontName;
+   FListBox.OnClick := ListBoxClick;
+   PopulateNodes;
 end;
 
 procedure TNodePalette.PopulateNodes;

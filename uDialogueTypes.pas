@@ -116,7 +116,7 @@ type
     destructor Destroy; override;
     function ToJSON: TJSONObject;
     procedure FromJSON(obj: TJSONObject);
-    property ID: string read FID;
+    property ID: string read FID write FID;
     property NodeType: TNodeType read FNodeType write FNodeType;
     property Text: string read FText write FText;
     property Speaker: string read FSpeaker write FSpeaker;
@@ -595,9 +595,9 @@ begin
   FLocales := TStringList.Create;
   FLocales.Add('en-US');
   FActiveLocale := 'en-US';
-  FName := 'New Dialogue';
-  FVersion := '1.0.0';
-  FAuthor := '';
+   FName := 'New Dialogue';
+   FVersion := '1.0.1';
+   FAuthor := '';
   FCreatedDate := Now;
   FModifiedDate := Now;
   FModified := False;

@@ -100,6 +100,24 @@ Also improved Red `TextPrimary` from $004060FF (4.27:1) → $005070FF.
 ### Done — Bug Fixes (2026-05-14)
 - Fixed `uNodeCanvas.pas(585): E2003 Undeclared identifier: 'accent'` — added `accent` to local var declaration in `DrawNode`
   - Cleaned up dead code: removed stale `accent` assignment using `NODE_ACCENT_COLORS` (now theme-driven) and unused loop counter `i` in `DrawNodeBody`
+- Fixed node connection lines: Changed `i` to `j` in `DrawConnections` sy calculation — connectors now use correct Y position per option
+- Added mouse-based node connection: Added `PortAtPoint` function and modified `MouseDown` to start connection mode when clicking output ports
+- Implemented MRU system: Added `FRecentProjects` field, `UpdateRecentProjects`, `PopulateRecentMenu`, and `miRecentClick` handler to track and display recently opened projects in File menu
+
+### Phase 1: Procedural Dialogue Generator (Tools\DialogueGenerator\)
+- **context_manager.py**: Short-term `ShortTermMemory` (deque-based) and `LongTermMemory` (file-persistent) with hybrid context management
+- **persona.py**: `CharacterPersona` class with traits, speech patterns, emotional states; 4 Fallout-themed personas (vault_dweller, brotherhood_knight, raider_chief, ghoul_philosopher)
+- **dialogue_generator.py**: Main `DialogueGenerator` class with Ollama CLI integration for offline use
+- **README.md**: Usage documentation with examples
+
+### Done — FMFImporter Fixes (2026-05-14)
+- Added `ParseNPCText` to interface section declaration
+- Fixed `ParseOptionLine` signature mismatch (`const ALine, ASource: string` → `const ALine: string; ASource: string`)
+- Fixed `TPlayerOption.Conditions.Add(cond)` → array resize pattern (`SetLength` + index assignment)
+- Fixed `FProject.GlobalVars.Values[]` → `FProject.GlobalVars.Add(key, value)` for `TDictionary<string, string>`
+- Added `miImportFMF` field declaration in uMainForm.pas
+- Added FMFImporter to DPR uses clause
+- **Compiler output: 0 errors**, 11 hints only
 
 ### Blocking
 - None

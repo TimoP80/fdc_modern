@@ -190,8 +190,6 @@ var
   skill: TSkillType;
   ct: TConditionType;
   co: TConditionOperator;
-  se: TScriptEvent;
-  lbl: TLabel;
   btn: TButton;
 begin
   Width := 1100;
@@ -583,7 +581,6 @@ end;
 procedure TPreviewForm.DrawPortraitPlaceholder;
 var
   bmp: TBitmap;
-  r: TRect;
   t: TFDCTheme;
 begin
   t := TThemeManager.Current;
@@ -782,7 +779,7 @@ begin
 
   if chkAutoAdvance.Checked and
      (node.NodeType in [ntNPCDialogue, ntComment]) and
-     (node.PlayerOptions.Count = 0) and
+     (not Assigned(node.PlayerOptions) or (node.PlayerOptions.Count = 0)) and
      (node.NextNodeID <> '') then
   begin
     AddHistoryEntry(node, '[Auto-advanced]');
@@ -791,7 +788,7 @@ begin
   end;
 
   if (node.NodeType in [ntNPCDialogue, ntComment]) and
-     (node.PlayerOptions.Count = 0) and
+     (not Assigned(node.PlayerOptions) or (node.PlayerOptions.Count = 0)) and
      (node.NextNodeID = '') then
     AddStatusMessage('(No further options - dialogue branch ends)', t.TextDim);
 end;
@@ -803,7 +800,11 @@ begin
   for btn in FOptionButtons do
   begin
     scrollOptions.RemoveControl(btn);
-    btn.Free;
+    // Safely schedule button destruction after current event returns
+    if btn.HandleAllocated then
+      PostMessage(btn.Handle, CM_RELEASE, 0, 0)
+    else
+      btn.Free;
   end;
   FOptionButtons.Clear;
 end;
@@ -818,10 +819,24 @@ var
   optText: string;
 begin
   ClearOptionButtons;
+  if not Assigned(node) then
+  begin
+    AddStatusMessage('ERROR: Invalid node reference', TThemeManager.Current.ColorError);
+    Exit;
+  end;
+
+  if not Assigned(node.PlayerOptions) then
+  begin
+    AddStatusMessage('ERROR: Node PlayerOptions not initialized', TThemeManager.Current.ColorError);
+    Exit;
+  end;
+
   t := TThemeManager.Current;
   yPos := 4;
 
-  if (node.NextNodeID <> '') and (node.NodeType in [ntNPCDialogue, ntScript, ntRandom]) then
+  if (node.NextNodeID <> '') and
+      (node.NodeType in [ntNPCDialogue, ntScript, ntRandom]) and
+      (node.PlayerOptions.Count = 0) then
   begin
     btn := TButton.Create(scrollOptions);
     btn.Parent := scrollOptions;
@@ -909,6 +924,18 @@ begin
   tagVal := btn.Tag;
   t := TThemeManager.Current;
   node := FCurrentNode;
+
+  if not Assigned(node) then
+  begin
+    AddStatusMessage('ERROR: No current node selected', t.ColorError);
+    Exit;
+  end;
+
+  if not Assigned(node.PlayerOptions) then
+  begin
+    AddStatusMessage('ERROR: Node options not initialized', t.ColorError);
+    Exit;
+  end;
 
   if tagVal = -99 then
   begin

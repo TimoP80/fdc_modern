@@ -305,12 +305,22 @@ begin
     ApplyToStringGrid(TStringGrid(AControl))
   else if AControl is TPageControl then
     TControlHack(AControl).Color := FCurrentTheme.BgDark
-  else if AControl is TTabSheet then
-  begin
-    TControlHack(AControl).Color := FCurrentTheme.BgDark;
-    TControlHack(AControl).Font.Color := FCurrentTheme.TextPrimary;
-    TControlHack(AControl).Font.Name := FCurrentTheme.FontName;
-  end;
+else if AControl is TTabSheet then
+   begin
+     TControlHack(AControl).Color := FCurrentTheme.BgDark;
+     TControlHack(AControl).Font.Color := FCurrentTheme.TextPrimary;
+     TControlHack(AControl).Font.Name := FCurrentTheme.FontName;
+   end
+  else if AControl is TCheckBox then
+   begin
+     TCheckBox(AControl).Font.Color := FCurrentTheme.TextPrimary;
+     TCheckBox(AControl).Font.Name := FCurrentTheme.FontName;
+   end
+  else if AControl is TRadioButton then
+   begin
+     TRadioButton(AControl).Font.Color := FCurrentTheme.TextPrimary;
+     TRadioButton(AControl).Font.Name := FCurrentTheme.FontName;
+   end;
 
   if AControl is TWinControl then
     for I := 0 to TWinControl(AControl).ControlCount - 1 do

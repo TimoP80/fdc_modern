@@ -557,11 +557,17 @@ end;
 procedure TFloatMessageForm.btnAddMsgClick(Sender: TObject);
 var
   msg: TFloatMessage;
+  hadCurrent: Boolean;
+  newText: string;
 begin
   if not Assigned(FProject) then Exit;
+  hadCurrent := Assigned(FCurrentMsg);
+  newText := '';
+  if not hadCurrent then
+    newText := Trim(memoText.Text);
   SaveCurrentMessage;
   msg := TFloatMessage.Create;
-  msg.Text := 'New float message';
+  msg.Text := newText;
   msg.Category := IfThen(cmbCategoryFilter.ItemIndex > 0,
     cmbCategoryFilter.Items[cmbCategoryFilter.ItemIndex], 'Ambient');
   msg.Priority := 5;
@@ -577,6 +583,7 @@ begin
       LoadMessage(msg);
       Break;
     end;
+end;
 end;
 
 procedure TFloatMessageForm.btnDelMsgClick(Sender: TObject);

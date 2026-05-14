@@ -2,6 +2,18 @@
 
 All notable changes to the Fallout Dialogue Creator project are documented in this file.
 
+## [1.0.1] — 2026-05-14
+
+### Fixed
+- **Dialogue preview access violation** — Added nil checks for `FCurrentNode` and `node.PlayerOptions` in `OptionButtonClick`; crash when selecting player options should no longer occur
+- **Button destruction safety** — `ClearOptionButtons` now uses `PostMessage(btn.Handle, CM_RELEASE, ...)` instead of direct `Free` to prevent freeing buttons during their own click event
+- **Float message editor** — Custom message text is now preserved when adding a new message (previously hardcoded to "New float message")
+- **SSL importer infinite loop** — `TrySetStmt` matched statements without advancing `FPos`, causing hangs; now increments position correctly. Also improved `if/else` depth tracking to handle non-branching `then` blocks followed by `else`
+
+### Changed
+- Added parser iteration safety limit (`FSafetyLimit = linecount × 10`) to prevent infinite loops on malformed scripts
+- Removed unused variables across `uPreviewSystem.pas` and `SSLImporter.pas`
+
 ## [1.0.0] — 2026-05-14
 
 ### Fixed
